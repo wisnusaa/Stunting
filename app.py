@@ -50,18 +50,37 @@ with st.form("prediction_form"):
     submit_button = st.form_submit_button(label='Prediksi Stunting')
 
 # Logika setelah form disubmit
+# Logika setelah form disubmit
 if submit_button:
-    # 1. Menyiapkan data input untuk model
-    # Urutan fitur harus sama persis dengan saat training: [Umur (bulan), Jenis Kelamin, Berat Badan (kg), Tinggi Badan (cm)]
-    input_data = np.array([[umur, jenis_kelamin, berat, tinggi]])
+    # --- PERUBAHAN DIMULAI DI SINI ---
+
+    # 1. Pisahkan fitur kontinu dan kategori
+    # Fitur kontinu adalah yang akan kita scale
+    continuous_features = np.array([[umur, berat, tinggi]])
     
-    # 2. Melakukan scaling pada input data
-    # Kita hanya transform, tidak fit_transform, karena kita menggunakan skala dari data training
-    scaled_input_data = scaler.transform(input_data)
+    # Fitur kategori (Jenis Kelamin) tidak di-scale
+    # Nilainya sudah 0 atau 1
+    categorical_feature = jenis_kelamin
+
+    # 2. Lakukan scaling HANYA pada fitur kontinu
+    # Scaler sekarang menerima input dengan 3 fitur, sesuai dengan saat ia dilatih
+    scaled_continuous_features = scaler.transform(continuous_features)
+
+    # 3. Gabungkan kembali semua fitur dalam urutan yang BENAR untuk model
+    # Model Anda dilatih dengan urutan: [Umur, Jenis Kelamin, Berat, Tinggi]
+    # Jadi, kita harus menyusun kembali array input sesuai urutan tersebut
+    input_data = np.array([[
+        scaled_continuous_features[0,0], # Umur yang sudah di-scale
+        categorical_feature,             # Jenis Kelamin (tidak di-scale)
+        scaled_continuous_features[0,1], # Berat yang sudah di-scale
+        scaled_continuous_features[0,2]  # Tinggi yang sudah di-scale
+    ]])
     
-    # 3. Melakukan prediksi
-    prediction = model.predict(scaled_input_data)
-    prediction_proba = model.predict_proba(scaled_input_data)
+    # --- AKHIR PERUBAHAN ---
+
+    # 4. Melakukan prediksi dengan data yang sudah siap
+    prediction = model.predict(input_data)
+    prediction_proba = model.predict_proba(input_data)
     
     st.header("Hasil Prediksi:")
     
